@@ -129,7 +129,7 @@ double calculationOfNumberPi(unsigned int terms);
 int pi();
 
 void pontoParaVirgula(char *str);
-long long getCurrentTimeMillis();
+double getCurrentTimeMillis();
 void processoPai();
 void arquivoControle(int identificador);
 ProcessReport processoFilho(int idFilho);

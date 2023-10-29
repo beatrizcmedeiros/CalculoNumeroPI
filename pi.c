@@ -11,31 +11,30 @@ int createReport(const Report *report) {
 
     fscanf(file, "%d", &id);
 
+    /*De acordo com o identificado que esta no arquivo, printa as informações na tela.
+        0 - processo pai.
+        1 - processo filho 1
+        2 - processo filho 2
+    */
     if (id == 0) {
-        // Processo pai
-        printf("%s\n\n", report->programName);
+        printf("\n%s\n\n", report->programName);
         printf("%s\n", report->message1);
         printf("%s\n\n", report->message2);
     } else if (id == 1) {
-        // Primeiro processo filho
         printf("- Processo Filho: %s\n\n", report->processReport1.identification);
-        printf("- %s\n", report->processReport1.identification);
-        printf("%s\n\n", report->processReport1.numberOfThreads);
-        printf("%s\n", report->processReport1.start);
-        printf("%s\n", report->processReport1.end);
-        printf("%s\n\n", report->processReport1.duration);
-        printf("%s\n\n", report->processReport1.pi);
+        printf("\t%s\n\n", report->processReport1.numberOfThreads);
+        printf("\t%s\n", report->processReport1.start);
+        printf("\t%s\n", report->processReport1.end);
+        printf("\t%s\n\n", report->processReport1.duration);
+        printf("\t%s\n\n", report->processReport1.pi);
     } else if (id == 2) {
-        // Segundo processo filho
         printf("- Processo Filho: %s\n\n", report->processReport2.identification);
-        printf("- %s\n", report->processReport2.identification);
-        printf("%s\n\n", report->processReport2.numberOfThreads);
-        printf("%s\n", report->processReport2.start);
-        printf("%s\n", report->processReport2.end);
-        printf("%s\n\n", report->processReport2.duration);
-        printf("%s\n\n", report->processReport2.pi);
+        printf("\t%s\n\n", report->processReport2.numberOfThreads);
+        printf("\t%s\n", report->processReport2.start);
+        printf("\t%s\n", report->processReport2.end);
+        printf("\t%s\n\n", report->processReport2.duration);
+        printf("\t%s\n\n", report->processReport2.pi);
     }
-
 
     fclose(file);
     return TRUE;
@@ -63,10 +62,8 @@ int createFile(const FileName fileName, String description, const Threads thread
         fprintf(file, "%s\n", info);
     }
 
-    fprintf(file, "\n\nTotal: %.2f s", total);
-
+    fprintf(file, "\nTotal: %.2f s", total);
     fclose(file);
-
     return TRUE;
 }
 
@@ -94,7 +91,6 @@ void* sumPartial(void *terms){
 
     info->somaParcial = somaParcial;
     info->thread.tid = gettid();
-    // info->thread.tid = getgid();
 
     return (void*)info;
 }
@@ -104,15 +100,19 @@ double calculationOfNumberPi(unsigned int terms){
     pthread_t threads[NUMBER_OF_THREADS];
     double somaTotal = 0.0;
 
+
+    //Cria todas as threads e executa a função sumPartial().
     for (int i = 0; i < NUMBER_OF_THREADS; i++) {
-        long long start_time = getCurrentTimeMillis();
+        double start_time = getCurrentTimeMillis();
         dadosThreads[i].primeiroTermo = i * PARTIAL_NUMBER_OF_TERMS;
         threads[i] = createThread((unsigned int *)&dadosThreads[i]);
         dadosThreads[i].thread.threadID = threads[i];
-        long long end_time = getCurrentTimeMillis();
-        dadosThreads[i].thread.time = (double)(end_time - start_time);
+        double end_time = getCurrentTimeMillis();
+        dadosThreads[i].thread.time = end_time - start_time;
     }
 
+    //Pega o retorno de cada thread que executou a função sumPartial() usando o pthread_join(),
+    //e realiza a soma parcial dos resultados.
     for (int j = 0; j < NUMBER_OF_THREADS; j++) {
         void *resultado;
         pthread_join(threads[j], &resultado);
@@ -120,12 +120,12 @@ double calculationOfNumberPi(unsigned int terms){
         somaTotal += info->somaParcial;
     }
     
+    /*Pega as informações da thread armazenadas em dadosThreads[i].thread e passa para outro vetor 
+    que será utilizado para enviar os dados que serão armazenados no arquivo.*/
     Threads threadsInfo;
-
     for(int i = 0; i < NUMBER_OF_THREADS; i++){
         threadsInfo[i] = dadosThreads[i].thread;
     }
-
 
     FILE *file = fopen("controle.txt", "r");
     int id;
@@ -136,21 +136,20 @@ double calculationOfNumberPi(unsigned int terms){
     }
 
     fscanf(file, "%d", &id);
-    
+
+    //Verifica qual filho esta em execução para criar o arquivo referente a ele corretamente.
     if(id == 1){
         String descricao;
         FileName fileName;
         strcpy(descricao, "Tempo em segundos das 16 threads do processo filho pi1.");
         strcpy(fileName, "pi1.txt");
         createFile(fileName, descricao, threadsInfo);
-        printf("\n\n%s\n\n", fileName);
     }else if(id == 2){
         String descricao;
         FileName fileName;
         strcpy(descricao, "Tempo em segundos das 16 threads do processo filho pi2.");
         strcpy(fileName, "pi2.txt");
         createFile(fileName, descricao, threadsInfo);
-        printf("\n\n%s\n\n", fileName);
     }
 
     fclose(file);
@@ -158,20 +157,32 @@ double calculationOfNumberPi(unsigned int terms){
     return 4.0 * somaTotal;
 }
 
+/*
+Pega um string e substitui o ponto por virgula quando encontra.
+*/
 void pontoParaVirgula(char *str) {
     for (int i = 0; i < strlen(str); i++) {
         if (str[i] == '.') 
             str[i] = ',';
-        
     }
 }
 
-long long getCurrentTimeMillis() {
+/*
+Pega o tempo do sistema em milissegundos.
+*/
+double getCurrentTimeMillis() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    return ((long long)tv.tv_sec) * 1000 + ((long long)tv.tv_usec) / 1000;
+    return (double)tv.tv_sec * 1000.0 + (double)tv.tv_usec / 1000.0;
 }
 
+/*
+Obtem o arquivo de controle e a armazena nele um identificador, para que seja possível ver
+qual processo esta sendo executado de arcordo com o número armazenado no arquivo.
+0 - processo pai
+1 - processo filho 1
+2 - processo filho 2
+*/
 void arquivoControle(int identificador){
     FILE *file = fopen("controle.txt", "w");
     fprintf(file, "%d", identificador);
@@ -192,7 +203,7 @@ void processoPai() {
     arquivoControle(0);
     createReport(&report);
 
-    // Inicialize os campos da estrutura para os processos filhos
+    // Inicializa os campos da estrutura dos processos filhos
     memset(&report.processReport1, 0, sizeof(report.processReport1));
     memset(&report.processReport2, 0, sizeof(report.processReport2));
 
@@ -203,6 +214,7 @@ void processoPai() {
         exit(EXIT_FAILURE);
     }
 
+    // Processo filho 1
     if (pi1 == 0) {
         char identification1[100];
 
@@ -223,7 +235,7 @@ void processoPai() {
         exit(EXIT_FAILURE);
     }
 
-    // Segundo processo filho.
+    // Processo filho 2
     if (pi2 == 0) {
         char identification2[100];
 
@@ -241,7 +253,6 @@ void processoPai() {
     if (pi1 > 0 && pi2 > 0) {
         wait(NULL);
         wait(NULL);
-        
     }
 }
 
@@ -258,6 +269,7 @@ ProcessReport processoFilho(int idFilho){
 
     ProcessReport processReport;
     
+    double start_time = getCurrentTimeMillis();
     //Armazena o horário que começou a ser executado.
     sprintf(processReport.start, "Início: %.2d:%.2d:%.2d",tm->tm_hour,tm->tm_min,tm->tm_sec);
     strcpy(processReport.numberOfThreads, "Nº de threads: 16");
@@ -274,8 +286,8 @@ ProcessReport processoFilho(int idFilho){
     sprintf(processReport.end, "Fim: %.2d:%.2d:%.2d",tm->tm_hour,tm->tm_min,tm->tm_sec); 
 
     //Calcula qual foi o tempo de duração e armazena na variável.
-    double tempoSegundos = difftime(time(NULL),tempoInicial);
-    double tempoMS = (contagem[1] - contagem[0]) * 1000.0 / CLOCKS_PER_SEC;
+    double end_time = getCurrentTimeMillis();
+    double tempoSegundos = (end_time - start_time) / 1000.0;
     sprintf(processReport.duration, "Duração: %.2f s", tempoSegundos); 
     pontoParaVirgula(processReport.duration);
     
