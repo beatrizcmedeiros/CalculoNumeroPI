@@ -10,7 +10,10 @@
 #include <time.h> // Referente a hora e data do sistema.
 #include <unistd.h> // Relacionado ao fork, pipe, read e write.
 #include <sys/wait.h>
+#include <sys/time.h>
 #include <pthread.h> // Requerido pela API Pthreads (POSIX Threads).
+#include <sys/shm.h> // Relacionado a memoria compartilhada.
+#include <sys/stat.h> // Relacionado a memoria compartilhada.
 
 // Constantes lógicas.
 #define TRUE 1
@@ -29,14 +32,10 @@
 #define DECIMAL_PLACES 9
 
 // Número máximo de termos da série de Leibniz.
-#define MAXIMUM_NUMBER_OF_TERMS 2'000'000'000
+#define MAXIMUM_NUMBER_OF_TERMS 2000000000
 
 // Número parcial de termos da série de Leibniz.
-#define PARTIAL_NUMBER_OF_TERMS 125'000'000
-
-#define NUM_MAX_TERMOS 2000000000
-
-#define NUM_PARCIAL_TERMOS 125000000
+#define PARTIAL_NUMBER_OF_TERMS 125000000
 
 // Define uma string de tamanho padrão T, onde T é igual STRING_DEFAULT_SIZE.
 typedef char String[STRING_DEFAULT_SIZE];
@@ -94,7 +93,7 @@ int createReport(const Report *report);
 /* Cria o arquivo texto no diretório atual usando o nome do arquivo, a descrição e os dados do vetor do tipo Threads.
  * Retorna TRUE se o arquivo foi criado com sucesso ou FALSE se ocorreu algum erro.
  */
-int createFile(const FileName fileName, String description, const Threads *threads);
+int createFile(const FileName fileName, String description, const Threads threads);
 
 /* Cria uma thread para fazer a soma parcial de n termos da série de Leibniz. 
    Esta função deve usar a função sumPartial para definir qual a função a ser executada por cada uma das x threads 
@@ -129,7 +128,10 @@ double calculationOfNumberPi(unsigned int terms);
  */
 int pi();
 
-void criaProcesso();
+void pontoParaVirgula(char *str);
+long long getCurrentTimeMillis();
+void processoPai();
+void arquivoControle(int identificador);
 ProcessReport processoFilho(int idFilho);
 
 #endif
